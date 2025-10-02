@@ -1,0 +1,4 @@
+package pe.upc.edu.bibflipbackend.booking.domain.model.queries;
+
+public record GetAllCubicleByHeadquarterIdQuery(Long headquarterId) {
+}
