@@ -1,5 +1,7 @@
 package pe.upc.edu.bibflipbackend.iam.domain.model.aggregates;
 
+import jakarta.validation.constraints.Email;
+import lombok.Setter;
 import pe.upc.edu.bibflipbackend.iam.domain.model.entities.Role;
 import pe.upc.edu.bibflipbackend.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
@@ -21,9 +23,16 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     private String username;
 
     @Getter
+    @Setter
     @NotBlank
     @Size(max = 120)
     private String password;
+
+    @Email
+    @Getter
+    @Size(max = 360)
+    @Column(unique = true)
+    private String email;
 
     @Getter
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
@@ -33,14 +42,15 @@ public class User extends AuditableAbstractAggregateRoot<User> {
 
     public User() { this.roles = new HashSet<>();}
 
-    public User(String username, String password) {
+    public User(String username, String password, String email) {
         this();
         this.username = username;
         this.password = password;
+        this.email = email;
     }
 
-    public User(String username, String password, List<Role> roles) {
-        this(username, password);
+    public User(String username, String password, List<Role> roles, String email) {
+        this(username, password, email);
         addRoles(roles);
     }
 

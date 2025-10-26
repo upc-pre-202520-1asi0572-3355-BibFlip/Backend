@@ -49,7 +49,7 @@ public class HeadquarterSupervisorCommandServiceImpl implements HeadquarterSuper
         var headquarter = headquarterOptional.get();
 
         // Validate supervisor exists in IAM system
-        if (!externalIamService.existsUserById(command.userId().userId())) {
+        if (externalIamService.existsUserById(command.userId().userId())) {
             logger.warn("Supervisor with ID {} not found", command.userId().userId());
             throw new ResourceNotFoundException("Supervisor " + command.userId().userId());
         }
@@ -95,7 +95,7 @@ public class HeadquarterSupervisorCommandServiceImpl implements HeadquarterSuper
 
         // Validar que el usuario existe
         Long userId = command.userId().userId();
-        if (!externalIamService.existsUserById(userId)) {
+        if (externalIamService.existsUserById(userId)) {
             logger.warn("Usuario con ID {} no encontrado", userId);
             throw new ResourceNotFoundException("Usuario " + userId);
         }
