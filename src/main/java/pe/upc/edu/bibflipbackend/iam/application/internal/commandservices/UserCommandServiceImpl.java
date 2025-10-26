@@ -50,7 +50,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     @Override
     public Optional<ImmutablePair<User, String>> handle(SignInCommand command) {
-        var user = userRepository.findByEmail(command.email());
+        var user = userRepository.findByEmailIgnoreCase(command.email());
         if (user.isEmpty()) throw new ResourceNotFoundException("User not found");
         if (!hashingService.matches(command.password(), user.get().getPassword()))
             throw new InvalidValueException("Invalid password");

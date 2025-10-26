@@ -32,7 +32,7 @@ public class PasswordResetService {
 
     @Transactional
     public void requestReset(String email) {
-        var userOpt = userRepository.findByEmail(email);
+        var userOpt = userRepository.findByEmailIgnoreCase(email);
         if (userOpt.isEmpty()) throw new ResourceNotFoundException("Usuario no encontrado para el correo: " + email);
 
         String code = generate6DigitCode();
@@ -49,7 +49,7 @@ public class PasswordResetService {
         var token = tokenOpt.orElseThrow(() -> new IllegalArgumentException("Código inválido o ya usado"));
         if (token.getExpiresAt().isBefore(Instant.now())) throw new IllegalArgumentException("Código expirado");
 
-        var user = userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        var user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
 
