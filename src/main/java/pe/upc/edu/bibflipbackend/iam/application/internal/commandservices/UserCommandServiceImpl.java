@@ -43,14 +43,14 @@ public class UserCommandServiceImpl implements UserCommandService {
         roles = command.roles().stream()
                 .map(role -> roleRepository.findByName(role.getName())
                         .orElseThrow(() -> new ResourceNotFoundException("Role " + command.roles() + " does not exist"))).toList();
-        var user = new User(command.username(), hashingService.encode(command.password()), roles);
+        var user = new User(command.username(), hashingService.encode(command.password()), roles, command.email());
         userRepository.save(user);
         return userRepository.findByUsername(command.username());
     }
 
     @Override
     public Optional<ImmutablePair<User, String>> handle(SignInCommand command) {
-        var user = userRepository.findByUsername(command.username());
+        var user = userRepository.findByEmailIgnoreCase(command.email());
         if (user.isEmpty()) throw new ResourceNotFoundException("User not found");
         if (!hashingService.matches(command.password(), user.get().getPassword()))
             throw new InvalidValueException("Invalid password");

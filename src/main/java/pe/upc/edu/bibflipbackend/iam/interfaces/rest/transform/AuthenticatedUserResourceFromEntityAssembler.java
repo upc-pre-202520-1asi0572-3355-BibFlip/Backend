@@ -7,6 +7,6 @@ import pe.upc.edu.bibflipbackend.iam.interfaces.rest.resources.AuthenticatedUser
 public class AuthenticatedUserResourceFromEntityAssembler {
     public static AuthenticatedUserResource toResourceFromEntity(User entity, String token) {
         var roles = entity.getRoles().stream().map(Role::getStringName).toList();
-        return new AuthenticatedUserResource(entity.getId(), entity.getUsername(), token, roles);
+        return new AuthenticatedUserResource(entity.getId(), entity.getUsername(), token, roles, entity.getEmail());
     }
 }

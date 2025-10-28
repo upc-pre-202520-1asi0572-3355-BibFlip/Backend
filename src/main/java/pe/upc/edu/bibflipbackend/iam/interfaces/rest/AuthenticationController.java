@@ -1,5 +1,6 @@
 package pe.upc.edu.bibflipbackend.iam.interfaces.rest;
 
+import jakarta.validation.Valid;
 import pe.upc.edu.bibflipbackend.iam.domain.services.UserCommandService;
 import pe.upc.edu.bibflipbackend.iam.interfaces.rest.resources.AuthenticatedUserResource;
 import pe.upc.edu.bibflipbackend.iam.interfaces.rest.resources.SignInResource;
@@ -29,7 +30,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<UserResource> signUp(@RequestBody SignUpResource resource) {
+    public ResponseEntity<UserResource> signUp(@Valid @RequestBody SignUpResource resource) {
         var signUpCommand = SignUpCommandFromResourceAssembler.toCommandFromResource(resource);
         var user = userCommandService.handle(signUpCommand);
         if (user.isEmpty()) return ResponseEntity.badRequest().build();

@@ -17,7 +17,7 @@ public class ExternalIamService {
      * @return true si el usuario existe, false en caso contrario.
      */
     public boolean existsUserById(Long userId) {
-        return iamContextFacade.existsUser(userId);
+        return !iamContextFacade.existsUser(userId);
     }
 
     /**

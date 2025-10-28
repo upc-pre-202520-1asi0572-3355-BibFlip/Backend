@@ -62,7 +62,7 @@ public class HeadquarterSupervisorQueryServiceImpl implements HeadquarterSupervi
 
         // Validar que el supervisor existe
         Long supervisorId = query.supervisorId();
-        if (!externalIamService.existsUserById(supervisorId)) {
+        if (externalIamService.existsUserById(supervisorId)) {
             logger.warn("Supervisor con ID {} no encontrado", supervisorId);
             throw new ResourceNotFoundException("Supervisor " + supervisorId);
         }
