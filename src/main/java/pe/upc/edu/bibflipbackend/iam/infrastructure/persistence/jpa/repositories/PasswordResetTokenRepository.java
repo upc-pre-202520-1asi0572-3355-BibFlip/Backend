@@ -14,10 +14,10 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     @Modifying
     @Transactional
-    @Query("DELETE FROM PasswordResetToken p WHERE p.email = :email")
     void deleteAllByExpiresAtBefore(Instant time);
 
     @Modifying
     @Transactional
+    @Query("DELETE FROM PasswordResetToken p WHERE p.email = :email")
     void deleteByEmail(String email);
 }
