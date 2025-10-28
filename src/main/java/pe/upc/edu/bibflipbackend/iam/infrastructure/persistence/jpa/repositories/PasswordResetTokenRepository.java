@@ -2,6 +2,7 @@ package pe.upc.edu.bibflipbackend.iam.infrastructure.persistence.jpa.repositorie
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 import pe.upc.edu.bibflipbackend.iam.domain.model.aggregates.PasswordResetToken;
 
@@ -17,5 +18,6 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     @Modifying
     @Transactional
+    @Query("DELETE FROM PasswordResetToken p WHERE p.email = :email")
     void deleteByEmail(String email);
 }

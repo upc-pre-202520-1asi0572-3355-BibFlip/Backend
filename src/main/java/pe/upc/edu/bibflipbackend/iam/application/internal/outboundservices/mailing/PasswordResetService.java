@@ -35,8 +35,9 @@ public class PasswordResetService {
         var userOpt = userRepository.findByEmailIgnoreCase(email);
         if (userOpt.isEmpty()) throw new ResourceNotFoundException("Usuario no encontrado para el correo: " + email);
 
-        // Eliminar tokens existentes para este email antes de crear uno nuevo para evitar conflictos
+        // Eliminar tokens existentes para este email antes de crear uno nuevo
         tokenRepo.deleteByEmail(email);
+        tokenRepo.flush(); // Forzar la ejecución inmediata del DELETE
 
         String code = generate6DigitCode();
         var expiresAt = Instant.now().plus(15, ChronoUnit.MINUTES);
@@ -44,8 +45,8 @@ public class PasswordResetService {
         tokenRepo.save(token);
         mailService.sendPasswordResetCode(email, code);
 
-        // Limpieza de tokens que expiraron hace más de 1 hora (para no saturar la BD)
-        tokenRepo.deleteAllByExpiresAtBefore(Instant.now().minus(1, ChronoUnit.HOURS));
+        // Limpieza de tokens que expiraron
+        tokenRepo.deleteAllByExpiresAtBefore(Instant.now());
     }
 
     @Transactional
