@@ -5,6 +5,7 @@ import pe.upc.edu.bibflipbackend.booking.domain.model.aggregates.Cubicle;
 import pe.upc.edu.bibflipbackend.booking.domain.model.commands.CreateCubicleCommand;
 import pe.upc.edu.bibflipbackend.booking.domain.model.commands.CreateCubicleScheduleCommand;
 import pe.upc.edu.bibflipbackend.booking.domain.model.commands.DeleteCubicleCommand;
+import pe.upc.edu.bibflipbackend.booking.domain.model.commands.UpdateCubicleStatusCommand;
 import pe.upc.edu.bibflipbackend.booking.domain.model.entities.AvailabilitySlot;
 import pe.upc.edu.bibflipbackend.booking.domain.model.events.SingleCubicleAvailabilitySlotsGeneratedEvent;
 import pe.upc.edu.bibflipbackend.booking.domain.model.valueobjects.*;
@@ -41,9 +42,7 @@ public class CubicleCommandServiceImpl implements CubicleCommandService {
         LOGGER.info("Starting to process create cubicle command with headquarters ID: {} and cubicle number: {}", command.headquarterId(), command.cubicleNumber());
         var headquarterId = new HeadquarterId(command.headquarterId());
 
-        LOGGER.debug("Checking if headquarters with ID: {} exists", command.headquarterId());
         if(!externalHeadquarterService.existsHeadquarter(command.headquarterId())) {
-            LOGGER.error("Headquarters with ID: {} not found", command.headquarterId());
             throw new ResourceNotFoundException("Headquarter with ID: " + command.headquarterId() + " not found");
         }
 
@@ -111,7 +110,7 @@ public class CubicleCommandServiceImpl implements CubicleCommandService {
 
         var intervalMinutesOpt = externalHeadquarterService.getHeadquarterIntervalMinutes(headquarterId.headquarterId());
 
-        if(!intervalMinutesOpt.isPresent() || intervalMinutesOpt.get() == 0) {
+        if(intervalMinutesOpt.isEmpty() || intervalMinutesOpt.get() == 0) {
             LOGGER.error("Error while retrieving interval minutes for headquarters");
             throw new RuntimeException("Error while retrieving interval minutes for headquarters");
         }
@@ -163,6 +162,7 @@ public class CubicleCommandServiceImpl implements CubicleCommandService {
 
         return Optional.of(cubicle);
     }
+
     @Override
     public void handle(DeleteCubicleCommand command) {
         LOGGER.info("Processing delete cubicle command for cubicle ID: {}", command.cubicleId());
@@ -174,5 +174,29 @@ public class CubicleCommandServiceImpl implements CubicleCommandService {
         cubicle.setStatus(CubicleStatus.DELETED);
         cubicleRepository.save(cubicle);
         LOGGER.info("Cubicle with ID: {} marked as DELETED successfully", command.cubicleId());
+    }
+
+    @Override
+    public Optional<Cubicle> handle(UpdateCubicleStatusCommand command) {
+        LOGGER.info("Processing update status command for cubicle ID: {} to status: {}",
+                command.cubicleId(), command.status());
+
+        var cubicle = cubicleRepository.findById(command.cubicleId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Cubicle with ID: " + command.cubicleId() + " not found"));
+
+        LOGGER.debug("Current status: {}, New status: {}", cubicle.getStatus(), command.status());
+
+        // Update status
+        cubicle.setStatus(command.status());
+
+        try {
+            var savedCubicle = cubicleRepository.save(cubicle);
+            LOGGER.info("Cubicle status updated successfully for ID: {}", command.cubicleId());
+            return Optional.of(savedCubicle);
+        } catch (Exception e) {
+            LOGGER.error("Error while updating cubicle status: {}", e.getMessage(), e);
+            throw new RuntimeException("Error while updating cubicle status: " + e.getMessage());
+        }
     }
 }

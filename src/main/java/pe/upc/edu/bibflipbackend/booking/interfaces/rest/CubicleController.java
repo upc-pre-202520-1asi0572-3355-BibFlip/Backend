@@ -91,6 +91,7 @@ public class CubicleController {
         LOGGER.info("Found {} cubicles for headquarter ID: {}", cubicles.size(), headquarterId);
         return new ResponseEntity<>(cubicleResources, HttpStatus.OK);
     }
+
     @DeleteMapping(value = "{cubicleId}")
     public ResponseEntity<Void> deleteCubicle(@PathVariable Long cubicleId) {
         LOGGER.info("Received request to delete cubicle with ID: {}", cubicleId);
@@ -100,5 +101,28 @@ public class CubicleController {
 
         LOGGER.info("Cubicle with ID: {} deleted successfully", cubicleId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PatchMapping(value = "/{cubicleId}/status", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CubicleResource> updateCubicleStatus(
+            @PathVariable Long cubicleId,
+            @RequestBody UpdateCubicleStatusResource resource) {
+
+        LOGGER.info("Received status update request for cubicle ID: {} to status: {}",
+                cubicleId, resource.status());
+
+        var command = new UpdateCubicleStatusCommand(cubicleId,
+                CubicleStatus.valueOf(resource.status()));
+        var cubicle = cubicleCommandService.handle(command);
+
+        if (cubicle.isEmpty()) {
+            LOGGER.warn("Cubicle with ID: {} not found", cubicleId);
+            throw new ResourceNotFoundException("Cubicle with ID: " + cubicleId + " not found");
+        }
+
+        var cubicleResource = CubicleResourceFromEntityAssembler.toResourceFromEntity(cubicle.get());
+        LOGGER.info("Cubicle status updated successfully for ID: {}", cubicleId);
+
+        return new ResponseEntity<>(cubicleResource, HttpStatus.OK);
     }
 }
