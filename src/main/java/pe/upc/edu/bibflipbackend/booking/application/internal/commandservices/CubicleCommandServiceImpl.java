@@ -2,10 +2,7 @@ package pe.upc.edu.bibflipbackend.booking.application.internal.commandservices;
 
 import pe.upc.edu.bibflipbackend.booking.application.internal.outboundedservices.acl.ExternalHeadquarterService;
 import pe.upc.edu.bibflipbackend.booking.domain.model.aggregates.Cubicle;
-import pe.upc.edu.bibflipbackend.booking.domain.model.commands.CreateCubicleCommand;
-import pe.upc.edu.bibflipbackend.booking.domain.model.commands.CreateCubicleScheduleCommand;
-import pe.upc.edu.bibflipbackend.booking.domain.model.commands.DeleteCubicleCommand;
-import pe.upc.edu.bibflipbackend.booking.domain.model.commands.UpdateCubicleStatusCommand;
+import pe.upc.edu.bibflipbackend.booking.domain.model.commands.*;
 import pe.upc.edu.bibflipbackend.booking.domain.model.entities.AvailabilitySlot;
 import pe.upc.edu.bibflipbackend.booking.domain.model.events.SingleCubicleAvailabilitySlotsGeneratedEvent;
 import pe.upc.edu.bibflipbackend.booking.domain.model.valueobjects.*;
@@ -198,5 +195,49 @@ public class CubicleCommandServiceImpl implements CubicleCommandService {
             LOGGER.error("Error while updating cubicle status: {}", e.getMessage(), e);
             throw new RuntimeException("Error while updating cubicle status: " + e.getMessage());
         }
+    }
+
+    @Override
+    public Optional<AvailabilitySlot> handle(UpdateAvailabilitySlotStatusCommand command) {
+        LOGGER.info("Processing update availability slot status for cubicle ID: {} on date: {} at time: {}",
+                command.cubicleId(), command.date(), command.currentTime());
+
+        var cubicle = cubicleRepository.findById(command.cubicleId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Cubicle with ID: " + command.cubicleId() + " not found"));
+
+        // Find the slot that matches the current time
+        Optional<AvailabilitySlot> matchingSlot = cubicle.getAvailabilitySlots().stream()
+                .filter(slot -> slot.getDateOfSlot().equals(command.date()))
+                .filter(slot -> isTimeInSlot(command.currentTime(), slot))
+                .findFirst();
+
+        if (matchingSlot.isEmpty()) {
+            LOGGER.warn("No availability slot found for cubicle ID: {} at time: {} on date: {}",
+                    command.cubicleId(), command.currentTime(), command.date());
+            return Optional.empty();
+        }
+
+        AvailabilitySlot slot = matchingSlot.get();
+        ScheduleSlotStatus oldStatus = slot.getStatus();
+
+        // Update status
+        slot.updateStatus(command.status());
+
+        try {
+            cubicleRepository.save(cubicle);
+            LOGGER.info("Availability slot ID: {} status updated from {} to {}",
+                    slot.getId(), oldStatus, command.status());
+            return Optional.of(slot);
+        } catch (Exception e) {
+            LOGGER.error("Error while updating availability slot status: {}", e.getMessage(), e);
+            throw new RuntimeException("Error while updating availability slot status: " + e.getMessage());
+        }
+    }
+
+    private boolean isTimeInSlot(LocalTime currentTime, AvailabilitySlot slot) {
+        LocalTime start = slot.getTimeInterval().startTime();
+        LocalTime end = slot.getTimeInterval().endTime();
+        return !currentTime.isBefore(start) && currentTime.isBefore(end);
     }
 }

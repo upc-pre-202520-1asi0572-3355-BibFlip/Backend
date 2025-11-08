@@ -1,18 +1,17 @@
 package pe.upc.edu.bibflipbackend.booking.interfaces.rest;
 
 import pe.upc.edu.bibflipbackend.booking.domain.model.commands.DeleteCubicleCommand;
+import pe.upc.edu.bibflipbackend.booking.domain.model.commands.UpdateAvailabilitySlotStatusCommand;
 import pe.upc.edu.bibflipbackend.booking.domain.model.commands.UpdateCubicleStatusCommand;
 import pe.upc.edu.bibflipbackend.booking.domain.model.queries.GetAllCubicleByHeadquarterIdQuery;
 import pe.upc.edu.bibflipbackend.booking.domain.model.queries.GetAllCubiclesQuery;
 import pe.upc.edu.bibflipbackend.booking.domain.model.queries.GetCubicleByIdQuery;
 import pe.upc.edu.bibflipbackend.booking.domain.model.queries.GetCubicleScheduleByIdAndDateQuery;
 import pe.upc.edu.bibflipbackend.booking.domain.model.valueobjects.CubicleStatus;
+import pe.upc.edu.bibflipbackend.booking.domain.model.valueobjects.ScheduleSlotStatus;
 import pe.upc.edu.bibflipbackend.booking.domain.services.CubicleCommandService;
 import pe.upc.edu.bibflipbackend.booking.domain.services.CubicleQueryService;
-import pe.upc.edu.bibflipbackend.booking.interfaces.rest.resources.AvailabilitySlotResource;
-import pe.upc.edu.bibflipbackend.booking.interfaces.rest.resources.CreateCubicleResource;
-import pe.upc.edu.bibflipbackend.booking.interfaces.rest.resources.CubicleResource;
-import pe.upc.edu.bibflipbackend.booking.interfaces.rest.resources.UpdateCubicleStatusResource;
+import pe.upc.edu.bibflipbackend.booking.interfaces.rest.resources.*;
 import pe.upc.edu.bibflipbackend.booking.interfaces.rest.transform.AvailabilitySlotResourceFromEntityAssembler;
 import pe.upc.edu.bibflipbackend.booking.interfaces.rest.transform.CreateCubicleCommandFromResourceAssembler;
 import pe.upc.edu.bibflipbackend.booking.interfaces.rest.transform.CubicleResourceFromEntityAssembler;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import pe.upc.edu.bibflipbackend.shared.application.exceptions.ResourceNotFoundException;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -128,5 +128,42 @@ public class CubicleController {
         LOGGER.info("Cubicle status updated successfully for ID: {}", cubicleId);
 
         return new ResponseEntity<>(cubicleResource, HttpStatus.OK);
+    }
+
+    @PatchMapping(value = "/{cubicleId}/availability-slot/status", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AvailabilitySlotResource> updateAvailabilitySlotStatus(
+            @PathVariable Long cubicleId,
+            @RequestBody UpdateAvailabilitySlotStatusResource resource) {
+
+        LOGGER.info("Received availability slot status update request for cubicle ID: {} to status: {}",
+                cubicleId, resource.status());
+
+        var command = new UpdateAvailabilitySlotStatusCommand(
+                cubicleId,
+                LocalDate.now(),
+                LocalTime.now(),
+                ScheduleSlotStatus.valueOf(resource.status())
+        );
+
+        var slotOpt = cubicleCommandService.handle(command);
+
+        if (slotOpt.isEmpty()) {
+            LOGGER.warn("No availability slot found for cubicle ID: {} at current time", cubicleId);
+            throw new ResourceNotFoundException(
+                    "No availability slot found for cubicle ID: " + cubicleId + " at current time");
+        }
+
+        var slot = slotOpt.get();
+        var slotResource = new AvailabilitySlotResource(
+                slot.getId(),
+                slot.getDateOfSlot(),
+                slot.getTimeInterval().startTime().toString(),
+                slot.getTimeInterval().endTime().toString(),
+                slot.getStatus().toString()
+        );
+
+        LOGGER.info("Availability slot status updated successfully for cubicle ID: {}", cubicleId);
+
+        return new ResponseEntity<>(slotResource, HttpStatus.OK);
     }
 }
