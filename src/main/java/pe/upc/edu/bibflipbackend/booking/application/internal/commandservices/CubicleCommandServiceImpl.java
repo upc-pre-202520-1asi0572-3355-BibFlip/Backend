@@ -206,15 +206,26 @@ public class CubicleCommandServiceImpl implements CubicleCommandService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Cubicle with ID: " + command.cubicleId() + " not found"));
 
-        // Find the slot that matches the current time
+        // En lugar de buscar por hora exacta, buscamos el slot donde la hora actual está dentro del intervalo
         Optional<AvailabilitySlot> matchingSlot = cubicle.getAvailabilitySlots().stream()
                 .filter(slot -> slot.getDateOfSlot().equals(command.date()))
-                .filter(slot -> isTimeInSlot(command.currentTime(), slot))
+                .filter(slot -> isTimeWithinSlot(command.currentTime(), slot))
                 .findFirst();
 
         if (matchingSlot.isEmpty()) {
             LOGGER.warn("No availability slot found for cubicle ID: {} at time: {} on date: {}",
                     command.cubicleId(), command.currentTime(), command.date());
+
+            // Log adicional para debugging
+            LOGGER.debug("Available slots for cubicle {} on {}: {}",
+                    command.cubicleId(),
+                    command.date(),
+                    cubicle.getAvailabilitySlots().stream()
+                            .filter(s -> s.getDateOfSlot().equals(command.date()))
+                            .map(s -> s.getTimeInterval().startTime() + "-" + s.getTimeInterval().endTime())
+                            .toList()
+            );
+
             return Optional.empty();
         }
 
@@ -235,9 +246,18 @@ public class CubicleCommandServiceImpl implements CubicleCommandService {
         }
     }
 
-    private boolean isTimeInSlot(LocalTime currentTime, AvailabilitySlot slot) {
+    /**
+     * MÉTODO CORREGIDO: Verifica si una hora está DENTRO del intervalo del slot
+     * Antes: Verificaba si currentTime == startTime (muy estricto)
+     * Ahora: Verifica si startTime <= currentTime < endTime
+     */
+    private boolean isTimeWithinSlot(LocalTime currentTime, AvailabilitySlot slot) {
         LocalTime start = slot.getTimeInterval().startTime();
         LocalTime end = slot.getTimeInterval().endTime();
+
+        // currentTime debe estar entre start y end time
+        // Ejemplo: slot 10:00-11:00, currentTime 10:30 → TRUE
+        // Ejemplo: slot 10:00-11:00, currentTime 11:00 → FALSE (pertenece al siguiente slot)
         return !currentTime.isBefore(start) && currentTime.isBefore(end);
     }
 }
