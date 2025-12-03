@@ -96,6 +96,8 @@ public class WebSecurityConfiguration {
                                 "api/v1/cubicles/{cubicleId}/availability-slot/status",
                                 "api/v1/bookings/{id}",
                                 "/api/v1/bookings/{id}",
+                                "/api/v1/bookings/cubicle/{cubicleId}/current",
+                                "api/v1/bookings/cubicle/{cubicleId}/current",
                                 "api/v1/health/**",
                                 "/v3/api-docs/**",
                                 "/swagger/**",
