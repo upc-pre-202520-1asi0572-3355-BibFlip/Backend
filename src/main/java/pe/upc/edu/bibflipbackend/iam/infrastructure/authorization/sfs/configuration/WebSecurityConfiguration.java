@@ -94,6 +94,8 @@ public class WebSecurityConfiguration {
                                 "api/v1/password-recovery/**",
                                 "/api/v1/cubicles/{cubicleId}/availability-slot/status",
                                 "api/v1/cubicles/{cubicleId}/availability-slot/status",
+                                "api/v1/bookings/{id}",
+                                "/api/v1/bookings/{id}",
                                 "api/v1/health/**",
                                 "/v3/api-docs/**",
                                 "/swagger/**",
